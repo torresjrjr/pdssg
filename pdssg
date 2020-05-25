@@ -1,0 +1,196 @@
+#!/usr/bin/sh
+
+main() {
+	echo "### Begin compiling ###"
+
+	# User options
+	source "$(dirname $0)/config.sh"
+	POSTS_DIR="${POSTS_DIR:-./archive}"
+	ATOM_FILE="${ATOM_FILE:-./feed/atom.md}"
+	ATOM_OUT="${ATOM_OUT:-./feed/atom.xml}"
+
+	prepare_dst
+
+	MD_FILES=$(find . -regex '.*\.md' | sed '/^\.\/\(_.*\|ast\|pub\|feed\)/d')
+	CACHE_FILE="./_tmp/posts_metadata.yaml"
+
+	cache_posts_metadata $POSTS_DIR
+	process_files $MD_FILES
+	make_atom_feed
+	clearup_files $MD_FILES
+	finish
+
+	echo "### End compiling ###"
+}
+
+
+# main functions
+
+prepare_dst() {
+	echo "# Preparing ./dst/ directory."
+	echo :: $(pwd)
+
+	[ -d ./src/ ] || {
+		echo "No  ./src/  directory. Exiting"
+		exit
+	}
+
+	[ -d ./dst/ ] && {
+		echo "Removing previous  ./dst/  build"
+		rm -r ./dst/*
+	}
+
+	echo "Copying from  ./src/  to  ./dst/"
+	cp -r ./src/* ./dst/
+
+	cd ./dst/
+	echo :: $(pwd)
+}
+
+cache_posts_metadata() {
+	echo "# Preparing post metadata."
+
+	posts_dir=$1
+
+	echo "posts:" > $CACHE_FILE
+
+	for post in $posts_dir/*
+	do
+		echo "  -" >> $CACHE_FILE
+
+		post_yaml="$(_get_yaml_block $post)"
+		filename=$(basename $post)
+		slug_attr="slug: ${filename%.md}"
+		yaml_block="$(echo -e "$post_yaml\n$slug_attr" | sed 's/^/    /')"
+
+		echo "$yaml_block" >> $CACHE_FILE
+	done
+
+	cat $CACHE_FILE
+}
+
+process_files() {
+	echo "# Processing Markdown files."
+
+	for md_file in $@
+	do
+		# feedback
+		echo -e "Processing:\t$md_file"
+
+		dirname="$( dirname "$md_file" )"
+		basename="$( basename "$md_file" )"
+		block="$( _get_yaml_block "$md_file" )"
+
+		new_filepath=${md_file%.md}.html
+		#echo -e "Target path:\t$new_filepath"
+
+		bool_toc="$(_get_slug toc "$block")"
+		[ -n "$bool_toc" ] && flag_toc="--toc"
+
+		### per file logic ###
+		[ "$md_file" == "$POSTS_DIR.md" ] && {
+			flag_metadata_file="--metadata-file=$CACHE_FILE"
+		}
+
+		### create full HTML page ###
+		pandoc  \
+			-f markdown  -t html  \
+			$md_file  -o $new_filepath  \
+			--standalone  \
+			-M lang:en  \
+			--template=./_templates/main.html  \
+			-H ./_includes/meta.html  \
+			-B ./_includes/header.html  \
+			-A ./_includes/footer.html  \
+			--email-obfuscation=references  \
+			--highlight-style=breezedark  \
+			$flag_toc  \
+			$flag_metadata_file
+
+
+		### prepare for next md file
+		# unset pandoc args just in case
+		unset md_file
+	   	unset new_filepath
+		unset flag_toc
+		unset flag_metadata_file
+
+		# feedback
+		#echo "done $md_file"
+	done
+}
+
+make_atom_feed() {
+	echo "# Making atom feed."
+	echo "Making base feed document"
+
+	pandoc  \
+		-f markdown  -t html  \
+		$ATOM_FILE  -o $ATOM_OUT  \
+		-M lang:en  \
+		--standalone  \
+		--template=./_templates/atom.xml  \
+		--metadata-file=$CACHE_FILE
+
+	rm -v  $ATOM_FILE
+	cat $ATOM_OUT  > ./_tmp/atom.xml
+
+	echo "Inserting contents"
+	for post in $POSTS_DIR/*.html
+	do
+		echo -e "Inserting:\t$post"
+
+		sed -n '/<!--CONTENT-->/,$!p' ./_tmp/atom.xml      > ./_tmp/before.xml
+		cat "$post" | sed -n '/<article>/,/<\/article>/p'  > ./_tmp/content.xml
+		sed -n '1,/<!--CONTENT-->/!p' ./_tmp/atom.xml      > ./_tmp/after.xml
+		cat ./_tmp/{before,content,after}.xml              > ./_tmp/atom.xml
+	done
+
+	echo "Finishing feed"
+	cat ./_tmp/atom.xml  >  $ATOM_OUT
+}
+
+clearup_files() {
+	echo "# Clearing up Markdown files."
+
+	rm -v $@
+	rm -rv $( find . -path './_*' -type d )
+}
+
+finish() {
+	echo "# Finished compiling."
+
+	cd ..
+	echo :: $(pwd)
+	echo "Finished"
+}
+
+
+# util functions
+
+_get_yaml_block() {
+	md_file="$1"
+	block="$(sed -n -e '1,/---/p' $md_file | grep -v '\-\-\-')"
+	echo "$block"
+}
+
+_get_slug() {
+	key="$1"
+	block="$2"
+
+	line=$(echo "$block" | grep "^$key\s*:\s*")
+	title=$(echo $line | sed -e "s/^$key\s*:\s*//")
+	slug=$(echo $title | sed -e 's/\s*$//' -e 's/\s\+/-/g')
+	neatslug=$(
+		echo $slug  \
+		| tr '[:upper:]' '[:lower:]'  \
+		| tr -cd "[:alpha:][:digit:]-"
+	)
+	echo $neatslug
+}
+
+
+# main
+
+main
+
