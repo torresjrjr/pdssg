@@ -124,10 +124,13 @@ make_atom_feed() {
 	echo "# Making atom feed."
 	echo "Making base feed document"
 
+	NOW_DT="$(date -uIs)"
+
 	pandoc  \
 		-f markdown  -t html  \
 		$ATOM_FILE  -o $ATOM_OUT  \
 		-M lang:en  \
+		-M "date:$NOW_DT" \
 		--standalone  \
 		--template=./_templates/atom.xml  \
 		--metadata-file=$CACHE_FILE
