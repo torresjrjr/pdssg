@@ -1,4 +1,6 @@
 #!/usr/bin/sh
+# pdssg - pandoc static site generator
+# Makes a static site and Atom feed.
 
 main() {
 	echo "### Begin compiling ###"
@@ -56,13 +58,12 @@ cache_posts_metadata() {
 
 	for post in $posts_dir/*
 	do
-		echo "  -" >> $CACHE_FILE
-
 		post_yaml="$(_get_yaml_block $post)"
 		filename=$(basename $post)
 		slug_attr="slug: ${filename%.md}"
 		yaml_block="$(echo -e "$post_yaml\n$slug_attr" | sed 's/^/    /')"
 
+		echo "  -"         >> $CACHE_FILE
 		echo "$yaml_block" >> $CACHE_FILE
 	done
 
@@ -74,15 +75,14 @@ process_files() {
 
 	for md_file in $@
 	do
-		# feedback
 		echo -e "Processing:\t$md_file"
+
+		### prepare flags for pandoc conversion ###
+		new_filepath=${md_file%.md}.html
 
 		dirname="$( dirname "$md_file" )"
 		basename="$( basename "$md_file" )"
 		block="$( _get_yaml_block "$md_file" )"
-
-		new_filepath=${md_file%.md}.html
-		#echo -e "Target path:\t$new_filepath"
 
 		bool_toc="$(_get_slug toc "$block")"
 		[ -n "$bool_toc" ] && flag_toc="--toc"
@@ -96,8 +96,8 @@ process_files() {
 		pandoc  \
 			-f markdown  -t html  \
 			$md_file  -o $new_filepath  \
-			--standalone  \
 			-M lang:en  \
+			--standalone  \
 			--template=./_templates/main.html  \
 			-H ./_includes/meta.html  \
 			-B ./_includes/header.html  \
@@ -107,16 +107,9 @@ process_files() {
 			$flag_toc  \
 			$flag_metadata_file
 
-
 		### prepare for next md file
-		# unset pandoc args just in case
-		unset md_file
-	   	unset new_filepath
 		unset flag_toc
 		unset flag_metadata_file
-
-		# feedback
-		#echo "done $md_file"
 	done
 }
 
@@ -129,13 +122,13 @@ make_atom_feed() {
 	pandoc  \
 		-f markdown  -t html  \
 		$ATOM_FILE  -o $ATOM_OUT  \
-		-M lang:en  \
+		--metadata-file=$CACHE_FILE  \
 		-M "date:$NOW_DT" \
+		-M lang:en  \
 		--standalone  \
-		--template=./_templates/atom.xml  \
-		--metadata-file=$CACHE_FILE
+		--template=./_templates/atom.xml
 
-	rm -v  $ATOM_FILE
+	rm -v $ATOM_FILE
 	cat $ATOM_OUT  > ./_tmp/atom.xml
 
 	echo "Inserting contents"
@@ -150,7 +143,7 @@ make_atom_feed() {
 	done
 
 	echo "Finishing feed"
-	cat ./_tmp/atom.xml  >  $ATOM_OUT
+	cat ./_tmp/atom.xml  > $ATOM_OUT
 }
 
 clearup_files() {
