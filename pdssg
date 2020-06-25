@@ -6,29 +6,31 @@ main() {
 	echo "### Begin compiling ###"
 
 	# User options
-	source "$(dirname $0)/config.sh"
-	POSTS_DIR="${POSTS_DIR:-./archive}"
-	ATOM_FILE="${ATOM_FILE:-./feed/atom.md}"
-	ATOM_OUT="${ATOM_OUT:-./feed/atom.xml}"
+	POSTS_DIR="./archive"
+	FEEDS_DIR="./feeds"
 
 	prepare_dst
 
-	MD_FILES=$(find . -regex '.*\.md' | sed '/^\.\/\(_.*\|ast\|pub\|feed\)/d')
-	CACHE_FILE="./_tmp/posts_metadata.yaml"
+	NOW_DT="$(date -uIs)"
+	MD_FILES=$(find . -regex '.*\.md' | sed '/^\.\/\(_.*\|ast\|pub\|feeds\)/d')
+	TMP_DIR="./_tmp"
 
 	cache_posts_metadata $POSTS_DIR
 	process_files $MD_FILES
-	make_atom_feed
+	make_atom_feed $POSTS_DIR
 	clearup_files $MD_FILES
 	finish
 
+	echo
 	echo "### End compiling ###"
+	echo
 }
 
 
 # main functions
 
 prepare_dst() {
+	echo
 	echo "# Preparing ./dst/ directory."
 	echo :: $(pwd)
 
@@ -50,11 +52,16 @@ prepare_dst() {
 }
 
 cache_posts_metadata() {
-	echo "# Preparing post metadata."
+	echo
+	echo "# Caching post metadata."
 
 	posts_dir=$1
+	cache_file="$TMP_DIR/$posts_dir/meta.yaml"
 
-	echo "posts:" > $CACHE_FILE
+	echo -e "New cache file:\t$cache_file"
+
+	mkdir -p $(dirname $cache_file)
+	echo "posts:" > $cache_file
 
 	for post in $posts_dir/*
 	do
@@ -63,14 +70,16 @@ cache_posts_metadata() {
 		slug_attr="slug: ${filename%.md}"
 		yaml_block="$(echo -e "$post_yaml\n$slug_attr" | sed 's/^/    /')"
 
-		echo "  -"         >> $CACHE_FILE
-		echo "$yaml_block" >> $CACHE_FILE
+		echo "  -"         >> $cache_file
+		echo "$yaml_block" >> $cache_file
 	done
 
-	cat $CACHE_FILE
+	echo "Cache file contents:"
+	cat $cache_file
 }
 
 process_files() {
+	echo
 	echo "# Processing Markdown files."
 
 	for md_file in $@
@@ -80,16 +89,14 @@ process_files() {
 		### prepare flags for pandoc conversion ###
 		new_filepath=${md_file%.md}.html
 
-		dirname="$( dirname "$md_file" )"
-		basename="$( basename "$md_file" )"
 		block="$( _get_yaml_block "$md_file" )"
-
 		bool_toc="$(_get_slug toc "$block")"
 		[ -n "$bool_toc" ] && flag_toc="--toc"
 
 		### per file logic ###
-		[ "$md_file" == "$POSTS_DIR.md" ] && {
-			flag_metadata_file="--metadata-file=$CACHE_FILE"
+		cache_file="$TMP_DIR/${md_file%.md}/meta.yaml"
+		[ -f "$cache_file" ] && {
+			flag_metadata_file="--metadata-file=$cache_file"
 		}
 
 		### create full HTML page ###
@@ -104,8 +111,9 @@ process_files() {
 			-A ./_includes/footer.html  \
 			--email-obfuscation=references  \
 			--highlight-style=breezedark  \
+			--webtex='https://latex.codecogs.com/svg.latex?'  \
 			$flag_toc  \
-			$flag_metadata_file
+			$flag_metadata_file  \
 
 		### prepare for next md file
 		unset flag_toc
@@ -114,39 +122,51 @@ process_files() {
 }
 
 make_atom_feed() {
+	echo
 	echo "# Making atom feed."
 	echo "Making base feed document"
 
-	NOW_DT="$(date -uIs)"
+	# NOTE: Point of failure. atom_file may not exist. Possible solution is
+	# derive posts_dir from existing atom_file's within the tree structure.
+	# Then, there would be no need to specify a POSTS_DIR array to pass as an
+	# argument to this function, moving configuration to the tree stucture.
+
+	posts_dir="$1"
+	cache_file="$TMP_DIR/$posts_dir/meta.yaml"
+	atom_file="$FEEDS_DIR/$posts_dir.md"
+	atom_out="$FEEDS_DIR/$posts_dir.xml"
 
 	pandoc  \
 		-f markdown  -t html  \
-		$ATOM_FILE  -o $ATOM_OUT  \
-		--metadata-file=$CACHE_FILE  \
+		$atom_file  -o $atom_out  \
+		--metadata-file=$cache_file  \
 		-M "date:$NOW_DT" \
 		-M lang:en  \
 		--standalone  \
 		--template=./_templates/atom.xml
 
-	rm -v $ATOM_FILE
-	cat $ATOM_OUT  > ./_tmp/atom.xml
+	rm -v $atom_file
+	cat $atom_out  > ./_tmp/atom.xml
 
 	echo "Inserting contents"
-	for post in $POSTS_DIR/*.html
+
+	posts_reverse=$(echo $posts_dir/*.html | sed 's/ /\n/g' | sort -r)
+	for post in $posts_reverse
 	do
 		echo -e "Inserting:\t$post"
 
-		sed -n '/<!--CONTENT-->/,$!p' ./_tmp/atom.xml      > ./_tmp/before.xml
-		cat "$post" | sed -n '/<article>/,/<\/article>/p'  > ./_tmp/content.xml
-		sed -n '1,/<!--CONTENT-->/!p' ./_tmp/atom.xml      > ./_tmp/after.xml
-		cat ./_tmp/{before,content,after}.xml              > ./_tmp/atom.xml
+		sed -n '/<!--CONTENT-->/,$!p' $TMP_DIR/atom.xml    > $TMP_DIR/before.xml
+		cat "$post" | sed -n '/<article>/,/<\/article>/p'  > $TMP_DIR/content.xml
+		sed -n '1,/<!--CONTENT-->/!p' $TMP_DIR/atom.xml    > $TMP_DIR/after.xml
+		cat $TMP_DIR/{before,content,after}.xml            > $TMP_DIR/atom.xml
 	done
 
 	echo "Finishing feed"
-	cat ./_tmp/atom.xml  > $ATOM_OUT
+	cat $TMP_DIR/atom.xml  > $atom_out
 }
 
 clearup_files() {
+	echo
 	echo "# Clearing up Markdown files."
 
 	rm -v $@
@@ -154,6 +174,7 @@ clearup_files() {
 }
 
 finish() {
+	echo
 	echo "# Finished compiling."
 
 	cd ..
