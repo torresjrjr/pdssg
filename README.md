@@ -1,7 +1,6 @@
 # pdssg - pandoc static site generator
 
-A shell script which generates a static site and Atom feed from Markdown files
-with pandoc.
+Generate a static site and Atom feeds, with Markdown, shell, and pandoc.
 
 ## Requirements
 
@@ -10,50 +9,62 @@ with pandoc.
 
 ## Installation
 
-Go to one directory above your website source directory, and `git clone` the
-pdssg repo.
+Clone pdssg beside your site source directory
 
 ```sh
-$ pwd
-/home/user/website
-$ ls
-src
 $ git clone https://github.com/torresjrjr/pdssg
 $ ls
-pdssg  src
+src  pdssg
 ```
-
-You should now have an executable is a single shell script `./pdssg/pdssg`.
 
 ## Usage
 
-pdssg is a single executable shell script, with an optional `config.sh` script,
-and no command-line flags. It simply generates a site from an exiting `src/`
-directory.
+To run pdssg:
 
 ```sh
 $ ./pdssg/pdssg
 ```
 
-pdssg's design is modular. It requires a neighboring `src/` directory with the
-site contents (Markdown files to be converted to HTML). Here's an example site.
+pdssg is a single executable shell script, with no command-line flags. It simply
+generates a neighboring site directory `dst/` from an exiting, neigboring `src/`
+directory with the site contents (Markdown files to be converted to HTML, and
+other files).
+
+pdssg's design is modular and tree-based. Here's an **example site**.
 
 ```
 src/
 |-- index.md
 |-- about.md
-|-- archive.md
-|-- archive/
+|-- posts.md
+|-- assets/
+|   `--- style.css
+|-- posts/
 |   |--- 2020-01-01-new-year.md
 |   |--- 2020-02-01-corona-what.md
 |   `--- 2020-03-01-stuck-at-home.md
-`-- feed/
-    `--- atom.md
+|-- feeds/
+|   `--- posts.md
+`-- _ignore
 ```
 
-pdssg expects Markdown files to have a YAML frontmatter block, which is an
-initial block of YAML metadata surrounded by a pair of `---`. The frontmatter
-should at least have a `title:` value.
+### Webpages and Markdown
+
+[Markdown][MD Wiki] files will be converted to HTML files, ready as webpages.
+The exceptions are filepaths matched by patterns in an `./_ignore` file.
+
+  [MD Wiki]: https://en.wikipedia.org/wiki/Markdown
+
+pdssg expects Markdown files to have a [YAML][YAML Wiki] frontmatter block,
+which is a block of YAML metadata surrounded by a pair of `---` preceding
+everything else.
+
+The frontmatter should at least have a `title` value, which will be used to make
+a `<h1>` heading. `author` and `date` values are recommended when appropriate.
+
+  [YAML Wiki]: https://en.wikipedia.org/wiki/YAML
+
+Example of a Markdown file:
 
 ```
 ---
@@ -62,18 +73,38 @@ author: John Smith
 date:   2020-12-30
 ---
 
-contents...
+## Markdown contents...
 ```
 
-When pdssg is executed, it copies the `src/` directory to `dst/` and converts
-all markdown files (ending in `.md`) to HTML, except for files in the
-sub-directories `ast` (assets), `pub` (public), and `feed` (atom feed).
+### Atom feeds
+
+[Atom][Atom Wiki] feeds are RSS-like feeds based a newer, improved syndication
+format. They are essentially used just like RSS and referred to as such.
+
+  [Atom Wiki]: https://en.wikipedia.org/wiki/Atom_(Web_standard)
+
+pdssg can make Atom feeds from directories, with their contained files as feed
+entries. To do this, make an "Atom seed file" as such:
+
+1.	Note the path of the Directory.
+2.	Prepend `./feeds/` to the path.
+3.	Append the `.md` file extension.
+4.	Create a Markdown file with this path.
+5.	Write a YAML frontmatter to the file.
+
+Refer to the example site above (the `posts/` directory).
+
+The resulting Atom feed will be at the path but with an `.xml` extension.  In
+this example, the atom feed will appear at `example.com/feeds/posts.xml`.
+
+**NOTE:** File entries are ordered alphanumerically by their filenames.
+
+---
 
 ## Author's notes
 
-This was originally a farily personal script I made to challange myself, and to
-generate my own site. At the request of a friendly blogger, I made it public.
+This project was born out of a personal challenge, for my own site.  At the
+request of a friendly blogger, I cleaned it up and made it public.
 
-You can contact me at my Telegram: [t.me/torresjrjr](https://t.me/torresjrjr).
-I'll more likely respond there.
+Contact me: [t.me/torresjrjr](https://t.me/torresjrjr).
 
