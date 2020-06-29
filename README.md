@@ -19,7 +19,7 @@ src  pdssg
 
 ## Usage
 
-To run pdssg:
+To run pdssg and build a static site:
 
 ```sh
 $ ./pdssg/pdssg
@@ -67,7 +67,7 @@ a `<h1>` heading. `author` and `date` values are recommended when appropriate.
 
 Example of a Markdown file:
 
-```
+```markdown
 ---
 title:  My Webpage Title
 author: John Smith
@@ -81,7 +81,7 @@ contents...
 
 ### Atom feeds
 
-[Atom][Atom] feeds are RSS-like feeds based on a newer, improved syndication
+[Atom][Atom] feeds are RSS-like feeds based on a newer, more-robust syndication
 format. They are essentially used just like [RSS][RSS] and referred to as such.
 
   [Atom]: https://en.wikipedia.org/wiki/Atom_(Web_standard)
@@ -90,7 +90,7 @@ format. They are essentially used just like [RSS][RSS] and referred to as such.
 pdssg can make Atom feeds from directories, with the directory's files as feed
 entries. To do this, make an "Atom seed file" as such:
 
-1.	Note the path of the Directory.
+1.	Note the path of the directory.
 2.	Prepend `./feeds/` to the path.
 3.	Append the `.md` file extension to the path.
 4.	Create a Markdown file with the path.
@@ -98,8 +98,9 @@ entries. To do this, make an "Atom seed file" as such:
 
 Refer to the **example site** above (the `posts/` directory).
 
-The resulting Atom feed will be at the path but with an `.xml` extension.  In
-this example, the atom feed will appear at `example.com/feeds/posts.xml`.
+The Atom seed file will be converted to an Atom feed file. This resulting feed
+will exist at the new path but with an `.xml` extension. In this example, the
+atom feed will appear at `example.com/feeds/posts.xml`.
 
 **NOTE:** File entries are ordered alphanumerically by their filenames.
 
@@ -107,7 +108,7 @@ this example, the atom feed will appear at `example.com/feeds/posts.xml`.
 
 ## Author's notes
 
-This project was born out of a personal challenge, for my own site.  At the
+This project was born out of a personal challenge, for my own site. At the
 request of a friendly blogger, I cleaned it up and made it public.
 
 Contact me: [t.me/torresjrjr](https://t.me/torresjrjr)
