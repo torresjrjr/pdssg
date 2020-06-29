@@ -6,18 +6,21 @@ main() {
 	echo "### Begin compiling ###"
 
 	# User options
-	POSTS_DIR="./archive"
 	FEEDS_DIR="./feeds"
 
 	prepare_dst
+	find_feeds
 
-	NOW_DT="$(date -uIs)"
-	MD_FILES=$(find . -regex '.*\.md' | sed '/^\.\/\(_.*\|ast\|pub\|feeds\)/d')
-	TMP_DIR="./_tmp"
+	for post_dir in $POSTS_DIRS
+	do cache_posts_metadata $post_dir
+	done
 
-	cache_posts_metadata $POSTS_DIR
 	process_files $MD_FILES
-	make_atom_feed $POSTS_DIR
+
+	for post_dir in $POSTS_DIRS
+	do make_atom_feed $post_dir
+	done
+
 	clearup_files $MD_FILES
 	finish
 
@@ -30,12 +33,14 @@ main() {
 # main functions
 
 prepare_dst() {
+	NOW_DATETIME="$(date -uIs)"
+
 	echo
-	echo "# Preparing ./dst/ directory."
+	echo "# Preparing ./dst/ directory"
 	echo :: $(pwd)
 
 	[ -d ./src/ ] || {
-		echo "No  ./src/  directory. Exiting"
+		echo "No  ./src/  directory, exiting"
 		exit
 	}
 
@@ -49,16 +54,54 @@ prepare_dst() {
 
 	cd ./dst/
 	echo :: $(pwd)
+
+	echo "Preparing temporary directory for cache"
+	# NOTE: POPF (Point Of Potential Failure)
+	TMP_DIR="./_tmp"
+	[ -d $TMP_DIR ] || mkdir $TMP_DIR
+
+	echo "Gathering unignored Markdown files"
+	IGNORE_MD_FILE="_ignore"
+	touch $IGNORE_MD_FILE
+	MD_FILES=$(
+		find . -regex '.*\.md'  \
+		| grep -v '.*/_.*'  \
+		| grep -v -F -f $IGNORE_MD_FILE
+	)
+	rm $IGNORE_MD_FILE
+	echo $MD_FILES
+}
+
+find_feeds() {
+	echo
+	echo "# Finding feed dirs"
+
+	ATOM_SEEDS=$(find $FEEDS_DIR  -type f  -path '*.md')
+	POSTS_DIRS=$(echo "$ATOM_SEEDS" | sed -e "s|^$FEEDS_DIR|.|" -e 's|\.md$||')
+	
+	echo $ATOM_SEEDS
+
+	for posts_dir in $POSTS_DIRS
+	do
+		[ -d $posts_dir ] || {
+			echo "ERROR:"
+			echo "Atom seed $FEEDS_DIR/$posts_dir.md has no corresponding"
+			echo "Directory $posts_dir. Exiting."
+			exit 1
+		}
+
+		echo "$posts_dir exists"
+	done
 }
 
 cache_posts_metadata() {
 	echo
-	echo "# Caching post metadata."
+	echo "# Caching post metadata" "($1)"
 
 	posts_dir=$1
 	cache_file="$TMP_DIR/$posts_dir/meta.yaml"
 
-	echo -e "New cache file:\t$cache_file"
+	echo -e "Preparing cache file:\t$cache_file"
 
 	mkdir -p $(dirname $cache_file)
 	echo "posts:" > $cache_file
@@ -74,13 +117,12 @@ cache_posts_metadata() {
 		echo "$yaml_block" >> $cache_file
 	done
 
-	echo "Cache file contents:"
-	cat $cache_file
+	echo "Cache file done"
 }
 
 process_files() {
 	echo
-	echo "# Processing Markdown files."
+	echo "# Processing Markdown files"
 
 	for md_file in $@
 	do
@@ -123,30 +165,25 @@ process_files() {
 
 make_atom_feed() {
 	echo
-	echo "# Making atom feed."
+	echo "# Making atom feed" "($1)"
 	echo "Making base feed document"
-
-	# NOTE: Point of failure. atom_file may not exist. Possible solution is
-	# derive posts_dir from existing atom_file's within the tree structure.
-	# Then, there would be no need to specify a POSTS_DIR array to pass as an
-	# argument to this function, moving configuration to the tree stucture.
 
 	posts_dir="$1"
 	cache_file="$TMP_DIR/$posts_dir/meta.yaml"
-	atom_file="$FEEDS_DIR/$posts_dir.md"
+	atom_seed="$FEEDS_DIR/$posts_dir.md"
 	atom_out="$FEEDS_DIR/$posts_dir.xml"
 
 	pandoc  \
 		-f markdown  -t html  \
-		$atom_file  -o $atom_out  \
+		$atom_seed  -o $atom_out  \
 		--metadata-file=$cache_file  \
-		-M "date:$NOW_DT" \
+		-M "date:$NOW_DATETIME" \
 		-M lang:en  \
 		--standalone  \
 		--template=./_templates/atom.xml
 
-	rm -v $atom_file
-	cat $atom_out  > ./_tmp/atom.xml
+	rm -v $atom_seed
+	cat $atom_out  > $TMP_DIR/atom.xml
 
 	echo "Inserting contents"
 
@@ -167,15 +204,15 @@ make_atom_feed() {
 
 clearup_files() {
 	echo
-	echo "# Clearing up Markdown files."
+	echo "# Clearing up Markdown files"
 
 	rm -v $@
-	rm -rv $( find . -path './_*' -type d )
+	rm -rv $( find . -regex '.*/_.*' | sort -r )
 }
 
 finish() {
 	echo
-	echo "# Finished compiling."
+	echo "# Finished compiling"
 
 	cd ..
 	echo :: $(pwd)
