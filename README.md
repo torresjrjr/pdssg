@@ -50,19 +50,20 @@ src/
 
 ### Webpages and Markdown
 
-[Markdown][MD Wiki] files will be converted to HTML files, ready as webpages.
-The exceptions are filepaths matched by patterns in an `./_ignore` file.
+[Markdown][Markdown] files will be converted to HTML files, ready as webpages.
+The exceptions are filepaths matched by patterns in an `./_ignore` file, like a
+`.gitignore` file.
 
-  [MD Wiki]: https://en.wikipedia.org/wiki/Markdown
+  [Markdown]: https://en.wikipedia.org/wiki/Markdown
 
-pdssg expects Markdown files to have a [YAML][YAML Wiki] frontmatter block,
-which is a block of YAML metadata surrounded by a pair of `---` preceding
-everything else.
+pdssg expects Markdown files to have a [YAML][YAML] frontmatter block, which is
+a block of YAML metadata surrounded by a pair of `---`, preceding the rest of
+the file contents.
 
 The frontmatter should at least have a `title` value, which will be used to make
 a `<h1>` heading. `author` and `date` values are recommended when appropriate.
 
-  [YAML Wiki]: https://en.wikipedia.org/wiki/YAML
+  [YAML]: https://en.wikipedia.org/wiki/YAML
 
 Example of a Markdown file:
 
@@ -73,26 +74,29 @@ author: John Smith
 date:   2020-12-30
 ---
 
-## Markdown contents...
+## Subheading
+
+contents...
 ```
 
 ### Atom feeds
 
-[Atom][Atom Wiki] feeds are RSS-like feeds based a newer, improved syndication
-format. They are essentially used just like RSS and referred to as such.
+[Atom][Atom] feeds are RSS-like feeds based on a newer, improved syndication
+format. They are essentially used just like [RSS][RSS] and referred to as such.
 
-  [Atom Wiki]: https://en.wikipedia.org/wiki/Atom_(Web_standard)
+  [Atom]: https://en.wikipedia.org/wiki/Atom_(Web_standard)
+  [RSS]: https://en.wikipedia.org/wiki/RSS
 
-pdssg can make Atom feeds from directories, with their contained files as feed
+pdssg can make Atom feeds from directories, with the directory's files as feed
 entries. To do this, make an "Atom seed file" as such:
 
 1.	Note the path of the Directory.
 2.	Prepend `./feeds/` to the path.
-3.	Append the `.md` file extension.
-4.	Create a Markdown file with this path.
+3.	Append the `.md` file extension to the path.
+4.	Create a Markdown file with the path.
 5.	Write a YAML frontmatter to the file.
 
-Refer to the example site above (the `posts/` directory).
+Refer to the **example site** above (the `posts/` directory).
 
 The resulting Atom feed will be at the path but with an `.xml` extension.  In
 this example, the atom feed will appear at `example.com/feeds/posts.xml`.
@@ -106,5 +110,5 @@ this example, the atom feed will appear at `example.com/feeds/posts.xml`.
 This project was born out of a personal challenge, for my own site.  At the
 request of a friendly blogger, I cleaned it up and made it public.
 
-Contact me: [t.me/torresjrjr](https://t.me/torresjrjr).
+Contact me: [t.me/torresjrjr](https://t.me/torresjrjr)
 
