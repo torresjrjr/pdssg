@@ -44,40 +44,42 @@ src/
 |-- about.md
 |-- posts.md
 |-- posts/
-|   |--- 2020-01-01-new-year.md
-|   |--- 2020-02-01-corona-what.md
-|   `--- 2020-03-01-stuck-at-home.md
+|   |-- _drafts/
+|   |   `--- 2020-04-01-bored.md
+|   |-- 2020-01-01-new-year.md
+|   |-- 2020-02-01-corona-what.md
+|   `-- 2020-03-01-stuck-at-home.md
 |-- feeds/
-|   `--- posts.md
+|   `-- posts.md
 |-- assets/
-|   `--- style.css
-|-- _includes/
-|   |--- header.html
-|   |--- footer.html
-|   `--- meta.html
-`-- _templates/
-    |--- atom.xml
-    `--- main.html
+|   `-- style.css
+|-- _templates/
+|   |-- atom.xml
+|   `-- main.html
+`-- _includes/
+    |-- header.html
+    |-- footer.html
+    `-- meta.html
 ```
 
 Here's the resulting build directory.
 
 ```
 dst/
-|-- index.md
-|-- about.md
-|-- posts.md
+|-- index.html
+|-- about.html
+|-- posts.html
 |-- posts/
-|   |--- 2020-01-01-new-year.md
-|   |--- 2020-02-01-corona-what.md
-|   `--- 2020-03-01-stuck-at-home.md
+|   |--- 2020-01-01-new-year.html
+|   |--- 2020-02-01-corona-what.html
+|   `--- 2020-03-01-stuck-at-home.html
 |-- feeds/
-|   `--- posts.md
+|   `--- posts.html
 `-- assets/
     `--- style.css
 ```
 
-Note: files and directories beginning with an underscore `_` will not be added.
+Note: files and directories beginning with an underscore `_` will be discarded.
 
 
 ### Webpages and Markdown
@@ -111,6 +113,24 @@ date:   2020-12-30
 
 contents...
 ```
+
+### Templates and Includes
+
+As in the example, the `_includes` and `_templates` directories will be used to
+generate the HTML and Atom files. They are then discarded.
+
+For the files in `_templates`:
+
+*	`atom.xml`  is used to make HTML documents.
+*	`main.html` is used to make Atom feeds.
+
+For the files in `_includes`:
+
+*	`meta.html`   is inserted in the document header within the `<meta>` tags.
+*	`header.html` is inserted in the body within the `<body>` tags, before
+	the main content.
+*	`footer.html` is inserted in the body within the `<body>` tags, after
+	the main content.
 
 
 ### Atom feeds
