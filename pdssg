@@ -5,9 +5,6 @@
 main() {
 	echo "### Begin compiling ###"
 
-	# User options
-	FEEDS_DIR="./feeds"
-
 	prepare_dst
 	find_feeds
 
@@ -69,7 +66,11 @@ prepare_dst() {
 		| grep -v -F -f $IGNORE_MD_FILE
 	)
 	rm $IGNORE_MD_FILE
-	echo $MD_FILES
+
+	echo "Finding feeds directory"
+	FEEDS_DIR="$(< ./_feeds)"
+	FEEDS_DIR=${FEEDSDIR:-./feeds}
+	echo "Dir: $FEEDS_DIR"
 }
 
 find_feeds() {
@@ -78,7 +79,7 @@ find_feeds() {
 
 	ATOM_SEEDS=$(find $FEEDS_DIR  -type f  -path '*.md')
 	POSTS_DIRS=$(echo "$ATOM_SEEDS" | sed -e "s|^$FEEDS_DIR|.|" -e 's|\.md$||')
-	
+
 	echo $ATOM_SEEDS
 
 	for posts_dir in $POSTS_DIRS

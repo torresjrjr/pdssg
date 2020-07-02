@@ -40,6 +40,7 @@ directory.
 ```
 src/
 |-- _ignore
+|-- _feeds
 |-- index.md
 |-- about.md
 |-- posts.md
@@ -143,20 +144,23 @@ Atom feeds allow readers to subscribe to a website's new content, like a blog.
   [RSS]: https://en.wikipedia.org/wiki/RSS
 
 pdssg can make Atom feeds from directories, with the directory's files as feed
-entries. To do this, make an "Atom seed file" as such:
+entries. To do this, you need to make a specified directory for your feeds, and
+make an "Atom seed file" as such:
 
-1.	Note the path of the directory.
-2.	Prepend `./feeds/` to the path.
-3.	Append the `.md` file extension to the path.
-4.	Create a Markdown file with the path.
-5.	Write a YAML frontmatter to the file.
+1.	Create a feeds directory (e.g. `./feeds/`) and write it's path in the config
+	file `_feeds`
+2.	Note the path of a directory you want to make a feed (e.g. `./posts/`).
+3.	Prepend your feeds directory path to it (e.g. `./feeds/posts/`).
+4.	Append the `.md` file extension to the path (e.g. `./feeds/posts.md`).
+5.	Create a Markdown file with this path. This is the Atom seed file.
+6.	Write a YAML frontmatter to the file.
 
 Refer to the **example site** above for demonstration (the `posts/` directory).
 
 The Atom seed file will be converted to an Atom feed file. This resulting feed
-will exist at the new path but with an `.xml` extension. In this example, the
-atom feed will appear at `example.com/feeds/posts.xml`. Note, the `post.md` file
-is not necessary for a feed, only a directory.
+will exist at the new path but with an `.xml` extension instead of `.md`. In
+this example, the atom feed will appear at `example.com/feeds/posts.xml`. Note,
+the `./posts.md` file is not necessary for a feed, only a directory.
 
 **NOTE:** Atom entries are ordered alphanumerically by their corresponding
 filenames, not by their `date` specified by their YAML frontmatter.
