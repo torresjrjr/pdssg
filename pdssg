@@ -105,10 +105,12 @@ cache_posts_metadata() {
 	echo -e "Preparing cache file:\t$cache_file"
 
 	mkdir -p $(dirname $cache_file)
-	echo "posts:" > $cache_file
+	echo "log:" > $cache_file
 
 	for post in $posts_dir/*
 	do
+		echo -e "Caching:\t$post"
+
 		post_yaml="$(_get_yaml_block $post)"
 		filename=$(basename $post)
 		slug_attr="slug: ${filename%.md}"
