@@ -67,7 +67,7 @@ prepare_dst() {
 	)
 	rm $IGNORE_MD_FILE
 
-	echo "Finding feeds directory"
+	echo "Finding feeds home directory"
 	FEEDS_DIR="$(< ./_feeds)"
 	FEEDS_DIR=${FEEDSDIR:-./feeds}
 	echo "Dir: $FEEDS_DIR"
@@ -75,7 +75,7 @@ prepare_dst() {
 
 find_feeds() {
 	echo
-	echo "# Finding feed dirs"
+	echo "# Finding feed gen directories"
 
 	ATOM_SEEDS=$(find $FEEDS_DIR  -type f  -path '*.md')
 	POSTS_DIRS=$(echo "$ATOM_SEEDS" | sed -e "s|^$FEEDS_DIR|.|" -e 's|\.md$||')
@@ -135,7 +135,7 @@ process_files() {
 		new_filepath=${md_file%.md}.html
 
 		block="$( _get_yaml_block "$md_file" )"
-		bool_toc="$(_get_slug toc "$block")"
+		bool_toc="$(_get_safe_slug toc "$block")"
 		[ -n "$bool_toc" ] && flag_toc="--toc"
 
 		### per file logic ###
@@ -231,19 +231,19 @@ _get_yaml_block() {
 	echo "$block"
 }
 
-_get_slug() {
+_get_safe_slug() {
 	key="$1"
 	block="$2"
 
 	line=$(echo "$block" | grep "^$key\s*:\s*")
 	title=$(echo $line | sed -e "s/^$key\s*:\s*//")
 	slug=$(echo $title | sed -e 's/\s*$//' -e 's/\s\+/-/g')
-	neatslug=$(
+	safe_slug=$(
 		echo $slug  \
 		| tr '[:upper:]' '[:lower:]'  \
 		| tr -cd "[:alpha:][:digit:]-"
 	)
-	echo $neatslug
+	echo $safe_slug
 }
 
 
