@@ -1,6 +1,6 @@
 #!/usr/bin/sh
 # pdssg - pandoc static site generator
-# Makes a static site and Atom feed.
+# Makes a static site with Atom feeds.
 
 main() {
 	echo "### Begin compiling ###"
