@@ -138,10 +138,16 @@ process_files() {
 		bool_toc="$(_get_safe_slug toc "$block")"
 		[ -n "$bool_toc" ] && flag_toc="--toc"
 
-		### per file logic ###
+		### feed gen directory test ###
 		cache_file="$TMP_DIR/${md_file%.md}/meta.yaml"
 		[ -f "$cache_file" ] && {
 			flag_metadata_file="--metadata-file=$cache_file"
+		}
+
+		### article test ###
+		cache_file="$TMP_DIR/$(dirname $md_file)/meta.yaml" 
+		[ -f "$cache_file" ] && {
+			flag_is_article="-M is_article:true"
 		}
 
 		### create full HTML page ###
@@ -159,10 +165,12 @@ process_files() {
 			--webtex='https://latex.codecogs.com/svg.latex?'  \
 			$flag_toc  \
 			$flag_metadata_file  \
+			$flag_is_article  \
 
 		### prepare for next md file
 		unset flag_toc
 		unset flag_metadata_file
+		unset flag_is_article
 	done
 }
 
