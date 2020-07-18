@@ -107,7 +107,7 @@ cache_posts_metadata() {
 	mkdir -p $(dirname $cache_file)
 	echo "log:" > $cache_file
 
-	for post in $posts_dir/*
+	for post in $posts_dir/*.md
 	do
 		echo -e "Caching:\t$post"
 
