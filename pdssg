@@ -71,6 +71,23 @@ prepare_dst() {
 	FEEDS_DIR="$(< ./_feeds)"
 	FEEDS_DIR=${FEEDSDIR:-./feeds}
 	echo "Dir: $FEEDS_DIR"
+
+	STYLESHEET="./ast/style.css"
+	echo "Minifying CSS file $STYLESHEET"
+	vim $STYLESHEET -es --not-a-term +'
+	%s/\s*:\s*/:/g
+	%s/\s*;\s*/;/g
+	%s/\s*,\s*/,/g
+	%s/\s*{\s*/{/g
+	%s/\s*}\s*/}/g
+	%s/\s*(\s*/(/g
+	%s/\s*)\s*/)/g
+	%s/^\s*//
+	%s/\n//
+	%s/\/\*.\{-}\*\///g
+	%s/;}/}/g
+	wq!
+	'
 }
 
 find_feeds() {
