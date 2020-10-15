@@ -73,11 +73,11 @@ prepare_dst() {
 	echo "Dir: $FEEDS_DIR"
 
 	ASSETS_DIR="./ast" # No ending slash!
+	echo "Finding CSS files in assets directory $ASSETS_DIR"
 	stylesheets=$(find -path "$ASSETS_DIR/*.css")
-	echo $stylesheets
 	for stylesheet in $stylesheets
 	do
-		echo "Minifying CSS file $stylesheet"
+		echo "Minifying $stylesheet"
 		vim $stylesheet -es --not-a-term +'
 		%s/\s*:\s*/:/ge
 		%s/\s*;\s*/;/ge
