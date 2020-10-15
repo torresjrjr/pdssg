@@ -68,26 +68,31 @@ prepare_dst() {
 	rm $IGNORE_MD_FILE
 
 	echo "Finding feeds home directory"
-	FEEDS_DIR="$(< ./_feeds)"
+	FEEDS_DIR="$(cat ./_feeds)"
 	FEEDS_DIR=${FEEDSDIR:-./feeds}
 	echo "Dir: $FEEDS_DIR"
 
-	STYLESHEET="./ast/style.css"
-	echo "Minifying CSS file $STYLESHEET"
-	vim $STYLESHEET -es --not-a-term +'
-	%s/\s*:\s*/:/g
-	%s/\s*;\s*/;/g
-	%s/\s*,\s*/,/g
-	%s/\s*{\s*/{/g
-	%s/\s*}\s*/}/g
-	%s/\s*(\s*/(/g
-	%s/\s*)\s*/)/g
-	%s/^\s*//
-	%s/\n//
-	%s/\/\*.\{-}\*\///g
-	%s/;}/}/g
-	wq!
-	'
+	ASSETS_DIR="./ast" # No ending slash!
+	stylesheets=$(find -path "$ASSETS_DIR/*.css")
+	echo $stylesheets
+	for stylesheet in $stylesheets
+	do
+		echo "Minifying CSS file $stylesheet"
+		vim $stylesheet -es --not-a-term +'
+		%s/\s*:\s*/:/ge
+		%s/\s*;\s*/;/ge
+		%s/\s*,\s*/,/ge
+		%s/\s*{\s*/{/ge
+		%s/\s*}\s*/}/ge
+		%s/\s*(\s*/(/ge
+		%s/\s*)\s*/)/ge
+		%s/^\s*//e
+		%s/\n//e
+		%s/\/\*.\{-}\*\///ge
+		%s/;}/}/ge
+		wq!
+		'
+	done
 }
 
 find_feeds() {
