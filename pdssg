@@ -177,6 +177,7 @@ process_files() {
 			-f markdown  -t html  \
 			$md_file  -o $new_filepath  \
 			-M lang:en  \
+			-M document-css=false  \
 			--standalone  \
 			--template=./_templates/main.html  \
 			-H ./_includes/meta.html  \
