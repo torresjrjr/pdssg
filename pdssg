@@ -78,7 +78,9 @@ prepare_dst() {
 	for stylesheet in ${stylesheets}
 	do
 		echo "Minifying ${stylesheet}"
-		vim ${stylesheet} -es --not-a-term +'
+		min_stylesheet="${stylesheet%.css}.min.css"
+		cp ${stylesheet} ${min_stylesheet}
+		vim ${min_stylesheet} -es --not-a-term +'
 		%s/\s*:\s*/:/ge
 		%s/\s*;\s*/;/ge
 		%s/\s*,\s*/,/ge
