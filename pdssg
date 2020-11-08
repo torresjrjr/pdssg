@@ -8,17 +8,17 @@ main() {
 	prepare_dst
 	find_feeds
 
-	for post_dir in $POSTS_DIRS
-	do cache_posts_metadata $post_dir
+	for post_dir in ${POSTS_DIRS}
+	do cache_posts_metadata ${post_dir}
 	done
 
-	process_files $MD_FILES
+	process_files ${MD_FILES}
 
-	for post_dir in $POSTS_DIRS
-	do make_atom_feed $post_dir
+	for post_dir in ${POSTS_DIRS}
+	do make_atom_feed ${post_dir}
 	done
 
-	clearup_files $MD_FILES
+	clearup_files ${MD_FILES}
 	finish
 
 	echo
@@ -55,30 +55,30 @@ prepare_dst() {
 	echo "Preparing temporary directory for cache"
 	# NOTE: POPF (Point Of Potential Failure)
 	TMP_DIR="./_tmp"
-	[ -d $TMP_DIR ] || mkdir $TMP_DIR
+	[ -d ${TMP_DIR} ] || mkdir ${TMP_DIR}
 
 	echo "Gathering unignored Markdown files"
 	IGNORE_MD_FILE="_ignore"
-	touch $IGNORE_MD_FILE
+	touch ${IGNORE_MD_FILE}
 	MD_FILES=$(
 		find . -regex '.*\.md'  \
 		| grep -v '.*/_.*'  \
-		| grep -v -F -f $IGNORE_MD_FILE
+		| grep -v -F -f ${IGNORE_MD_FILE}
 	)
-	rm $IGNORE_MD_FILE
+	rm ${IGNORE_MD_FILE}
 
 	echo "Finding feeds home directory"
 	FEEDS_DIR="$(cat ./_feeds)"
 	FEEDS_DIR=${FEEDSDIR:-./feeds}
-	echo "Dir: $FEEDS_DIR"
+	echo "Dir: ${FEEDS_DIR}"
 
 	ASSETS_DIR="./ast" # No ending slash!
-	echo "Finding CSS files in assets directory $ASSETS_DIR"
-	stylesheets=$(find -path "$ASSETS_DIR/*.css")
-	for stylesheet in $stylesheets
+	echo "Finding CSS files in assets directory ${ASSETS_DIR}"
+	stylesheets=$(find -path "${ASSETS_DIR}/*.css")
+	for stylesheet in ${stylesheets}
 	do
-		echo "Minifying $stylesheet"
-		vim $stylesheet -es --not-a-term +'
+		echo "Minifying ${stylesheet}"
+		vim ${stylesheet} -es --not-a-term +'
 		%s/\s*:\s*/:/ge
 		%s/\s*;\s*/;/ge
 		%s/\s*,\s*/,/ge
@@ -99,21 +99,21 @@ find_feeds() {
 	echo
 	echo "# Finding feed gen directories"
 
-	ATOM_SEEDS=$(find $FEEDS_DIR  -type f  -path '*.md')
-	POSTS_DIRS=$(echo "$ATOM_SEEDS" | sed -e "s|^$FEEDS_DIR|.|" -e 's|\.md$||')
+	ATOM_SEEDS=$(find ${FEEDS_DIR}  -type f  -path '*.md')
+	POSTS_DIRS=$(echo "${ATOM_SEEDS}" | sed -e "s|^${FEEDS_DIR}|.|" -e 's|\.md$||')
 
-	echo $ATOM_SEEDS
+	echo ${ATOM_SEEDS}
 
-	for posts_dir in $POSTS_DIRS
+	for posts_dir in ${POSTS_DIRS}
 	do
-		[ -d $posts_dir ] || {
+		[ -d ${posts_dir} ] || {
 			echo "ERROR:"
-			echo "Atom seed $FEEDS_DIR/$posts_dir.md has no corresponding"
-			echo "Directory $posts_dir. Exiting."
+			echo "Atom seed ${FEEDS_DIR}/${posts_dir}.md has no corresponding"
+			echo "Directory ${posts_dir}. Exiting."
 			exit 1
 		}
 
-		echo "$posts_dir exists"
+		echo "${posts_dir} exists"
 	done
 }
 
@@ -122,24 +122,24 @@ cache_posts_metadata() {
 	echo "# Caching post metadata" "($1)"
 
 	posts_dir=$1
-	cache_file="$TMP_DIR/$posts_dir/meta.yaml"
+	cache_file="${TMP_DIR}/${posts_dir}/meta.yaml"
 
-	echo -e "Preparing cache file:\t$cache_file"
+	echo -e "Preparing cache file:\t${cache_file}"
 
-	mkdir -p $(dirname $cache_file)
-	echo "log:" > $cache_file
+	mkdir -p $(dirname ${cache_file})
+	echo "log:" > ${cache_file}
 
-	for post in $posts_dir/*.md
+	for post in ${posts_dir}/*.md
 	do
-		echo -e "Caching:\t$post"
+		echo -e "Caching:\t${post}"
 
-		post_yaml="$(_get_yaml_block $post)"
-		filename=$(basename $post)
+		post_yaml="$(_get_yaml_block ${post})"
+		filename=$(basename ${post})
 		slug_attr="slug: ${filename%.md}"
-		yaml_block="$(echo -e "$post_yaml\n$slug_attr" | sed 's/^/    /')"
+		yaml_block="$(echo -e "${post_yaml}\n${slug_attr}" | sed 's/^/    /')"
 
-		echo "  -"         >> $cache_file
-		echo "$yaml_block" >> $cache_file
+		echo "  -"         >> ${cache_file}
+		echo "${yaml_block}" >> ${cache_file}
 	done
 
 	echo "Cache file done"
@@ -151,31 +151,31 @@ process_files() {
 
 	for md_file in $@
 	do
-		echo -e "Processing:\t$md_file"
+		echo -e "Processing:\t${md_file}"
 
 		### prepare flags for pandoc conversion ###
 		new_filepath=${md_file%.md}.html
 
-		block="$( _get_yaml_block "$md_file" )"
-		bool_toc="$(_get_safe_slug toc "$block")"
-		[ -n "$bool_toc" ] && flag_toc="--toc"
+		block="$( _get_yaml_block "${md_file}" )"
+		bool_toc="$(_get_safe_slug toc "${block}")"
+		[ -n "${bool_toc}" ] && flag_toc="--toc"
 
 		### feed gen directory test ###
-		cache_file="$TMP_DIR/${md_file%.md}/meta.yaml"
-		[ -f "$cache_file" ] && {
-			flag_metadata_file="--metadata-file=$cache_file"
+		cache_file="${TMP_DIR}/${md_file%.md}/meta.yaml"
+		[ -f "${cache_file}" ] && {
+			flag_metadata_file="--metadata-file=${cache_file}"
 		}
 
 		### article test ###
-		cache_file="$TMP_DIR/$(dirname $md_file)/meta.yaml" 
-		[ -f "$cache_file" ] && {
+		cache_file="${TMP_DIR}/$(dirname ${md_file})/meta.yaml" 
+		[ -f "${cache_file}" ] && {
 			flag_is_article="-M is_article:true"
 		}
 
 		### create full HTML page ###
 		pandoc  \
 			-f markdown  -t html  \
-			$md_file  -o $new_filepath  \
+			${md_file}  -o ${new_filepath}  \
 			-M lang:en  \
 			-M document-css=false  \
 			--standalone  \
@@ -186,9 +186,9 @@ process_files() {
 			--email-obfuscation=references  \
 			--highlight-style=breezedark  \
 			--webtex='https://latex.codecogs.com/svg.latex?'  \
-			$flag_toc  \
-			$flag_metadata_file  \
-			$flag_is_article  \
+			${flag_toc}  \
+			${flag_metadata_file}  \
+			${flag_is_article}  \
 
 		### prepare for next md file
 		unset flag_toc
@@ -203,37 +203,37 @@ make_atom_feed() {
 	echo "Making base feed document"
 
 	posts_dir="$1"
-	cache_file="$TMP_DIR/$posts_dir/meta.yaml"
-	atom_seed="$FEEDS_DIR/$posts_dir.md"
-	atom_out="$FEEDS_DIR/$posts_dir.xml"
+	cache_file="${TMP_DIR}/${posts_dir}/meta.yaml"
+	atom_seed="${FEEDS_DIR}/${posts_dir}.md"
+	atom_out="${FEEDS_DIR}/${posts_dir}.xml"
 
 	pandoc  \
 		-f markdown  -t html  \
-		$atom_seed  -o $atom_out  \
-		--metadata-file=$cache_file  \
-		-M "date:$NOW_DATETIME" \
+		${atom_seed}  -o ${atom_out}  \
+		--metadata-file=${cache_file}  \
+		-M "date:${NOW_DATETIME}" \
 		-M lang:en  \
 		--standalone  \
 		--template=./_templates/atom.xml
 
-	rm -v $atom_seed
-	cat $atom_out  > $TMP_DIR/atom.xml
+	rm -v ${atom_seed}
+	cat ${atom_out}  > ${TMP_DIR}/atom.xml
 
 	echo "Inserting contents"
 
-	posts_reverse=$(echo $posts_dir/*.html | sed 's/ /\n/g' | sort -r)
-	for post in $posts_reverse
+	posts_reverse=$(echo ${posts_dir}/*.html | sed 's/ /\n/g' | sort -r)
+	for post in ${posts_reverse}
 	do
-		echo -e "Inserting:\t$post"
+		echo -e "Inserting:\t${post}"
 
-		sed -n '/<!--CONTENT-->/,$!p' $TMP_DIR/atom.xml    > $TMP_DIR/before.xml
-		cat "$post" | sed -n '/<article>/,/<\/article>/p'  > $TMP_DIR/content.xml
-		sed -n '1,/<!--CONTENT-->/!p' $TMP_DIR/atom.xml    > $TMP_DIR/after.xml
-		cat $TMP_DIR/{before,content,after}.xml            > $TMP_DIR/atom.xml
+		sed -n '/<!--CONTENT-->/,$!p' ${TMP_DIR}/atom.xml   > ${TMP_DIR}/before.xml
+		cat "${post}" | sed -n '/<article>/,/<\/article>/p' > ${TMP_DIR}/content.xml
+		sed -n '1,/<!--CONTENT-->/!p' ${TMP_DIR}/atom.xml   > ${TMP_DIR}/after.xml
+		cat ${TMP_DIR}/{before,content,after}.xml           > ${TMP_DIR}/atom.xml
 	done
 
 	echo "Finishing feed"
-	cat $TMP_DIR/atom.xml  > $atom_out
+	cat ${TMP_DIR}/atom.xml  > ${atom_out}
 }
 
 clearup_files() {
@@ -258,23 +258,23 @@ finish() {
 
 _get_yaml_block() {
 	md_file="$1"
-	block="$(sed -n -e '1,/---/p' $md_file | grep -v '\-\-\-')"
-	echo "$block"
+	block="$(sed -n -e '1,/---/p' ${md_file} | grep -v '\-\-\-')"
+	echo "${block}"
 }
 
 _get_safe_slug() {
 	key="$1"
 	block="$2"
 
-	line=$(echo "$block" | grep "^$key\s*:\s*")
-	title=$(echo $line | sed -e "s/^$key\s*:\s*//")
-	slug=$(echo $title | sed -e 's/\s*$//' -e 's/\s\+/-/g')
+	line=$(echo "${block}" | grep "^${key}\s*:\s*")
+	title=$(echo ${line} | sed -e "s/^${key}\s*:\s*//")
+	slug=$(echo ${title} | sed -e 's/\s*$//' -e 's/\s\+/-/g')
 	safe_slug=$(
-		echo $slug  \
+		echo ${slug}  \
 		| tr '[:upper:]' '[:lower:]'  \
 		| tr -cd "[:alpha:][:digit:]-"
 	)
-	echo $safe_slug
+	echo ${safe_slug}
 }
 
 
