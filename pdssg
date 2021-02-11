@@ -150,6 +150,9 @@ cache_posts_metadata() {
 process_files() {
 	echo
 	echo "# Processing Markdown files"
+	echo
+	pandoc --version
+	echo
 
 	for md_file in $@
 	do
