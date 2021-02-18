@@ -48,6 +48,7 @@ prepare_dst() {
 
 	echo "Copying from  ./src/  to  ./dst/"
 	cp -r ./src/* ./dst/
+	cp ./src/.build.yml ./dst/.build.yml  # builds.sr.ht
 
 	cd ./dst/
 	echo :: $(pwd)
